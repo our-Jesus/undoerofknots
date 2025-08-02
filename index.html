@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>54-Day Rosary Novena to Our Lady Undoer of Knots</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            color: #2c5aa0;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header p {
+            color: #666;
+            font-style: italic;
+            font-size: 1.1em;
+        }
+
+        .phase-indicator {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 3px solid #2c5aa0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .phase-indicator h3 {
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            font-size: 1.4em;
+            font-weight: bold;
+        }
+
+        .phase-indicator p {
+            color: #000000;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .petition-phase {
+            border-color: #2c5aa0;
+            background: #ffffff;
+        }
+
+        .petition-phase h3 {
+            color: #1a1a1a;
+        }
+
+        .petition-phase p {
+            color: #000000;
+        }
+
+        .thanksgiving-phase {
+            border-color: #4CAF50;
+            background: #ffffff;
+        }
+
+        .thanksgiving-phase h3 {
+            color: #1a1a1a;
+        }
+
+        .thanksgiving-phase p {
+            color: #000000;
+        }
+
+        .progress-tracker {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: #e0e0e0;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2c5aa0, #4CAF50);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .navigation {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .nav-section {
+            margin-bottom: 15px;
+        }
+
+        .nav-section h4 {
+            color: #2c5aa0;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .group-selector {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .group-btn {
+            background: rgba(44, 90, 160, 0.1);
+            border: 2px solid #2c5aa0;
+            color: #2c5aa0;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .group-btn:hover, .group-btn.active {
+            background: #2c5aa0;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .day-selector {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(44, 90, 160, 0.05);
+        }
+
+        .day-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #2c5aa0;
+            color: #2c5aa0;
+            padding: 8px 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            min-width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .day-btn:hover, .day-btn.active {
+            background: #2c5aa0;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .day-btn.completed {
+            background: #4CAF50;
+            border-color: #4CAF50;
+            color: white;
+        }
+
+        .novena-content {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .day-content {
+            display: none;
+        }
+
+        .day-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .day-title {
+            color: #2c5aa0;
+            font-size: 2em;
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 3px solid #2c5aa0;
+            padding-bottom: 10px;
+        }
+
+        .rosary-mystery {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 223, 0, 0.1));
+            border: 2px solid #FFD700;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .rosary-mystery h4 {
+            color: #B8860B;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .mystery-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .mystery-list li {
+            margin: 8px 0;
+            color: #8B4513;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .prayer-step {
+            background: rgba(44, 90, 160, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #2c5aa0;
+        }
+
+        .prayer-step h3 {
+            color: #2c5aa0;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 1px solid rgba(44, 90, 160, 0.3);
+            padding-bottom: 5px;
+        }
+
+        .prayer-text {
+            font-style: italic;
+            line-height: 1.7;
+            font-size: 1.05em;
+            margin-bottom: 10px;
+        }
+
+        .prayer-instruction {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid #FFD700;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+            color: #B8860B;
+            text-align: center;
+        }
+
+        .meditation-section {
+            background: linear-gradient(135deg, rgba(44, 90, 160, 0.15), rgba(42, 82, 152, 0.05));
+            padding: 30px;
+            border-radius: 10px;
+            margin: 25px 0;
+            border: 3px solid rgba(44, 90, 160, 0.3);
+        }
+
+        .meditation-section h3 {
+            color: #2c5aa0;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            text-align: center;
+        }
+
+        .decade {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #2c5aa0;
+        }
+
+        .decade h4 {
+            color: #2c5aa0;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .prayer-count {
+            background: rgba(44, 90, 160, 0.1);
+            padding: 5px 10px;
+            border-radius: 15px;
+            display: inline-block;
+            margin: 5px 5px 10px 0;
+            font-size: 0.9em;
+            color: #2c5aa0;
+            font-weight: bold;
+        }
+
+        .quote {
+            text-align: center;
+            font-style: italic;
+            color: #2c5aa0;
+            margin: 20px 0;
+            font-size: 1.2em;
+            font-weight: bold;
+            background: rgba(44, 90, 160, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .completion-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 20px auto;
+            display: block;
+            transition: all 0.3s ease;
+        }
+
+        .completion-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .quick-nav {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .quick-nav button {
+            background: #2c5aa0;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            width: 50px;
+            height: 50px;
+            transition: all 0.3s ease;
+        }
+
+        .quick-nav button:hover {
+            background: #1e3c72;
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .novena-content {
+                padding: 20px;
+            }
+            
+            .day-btn, .group-btn {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            .quick-nav {
+                bottom: 10px;
+                right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>54-Day Rosary Novena</h1>
+            <h2 style="color: #2c5aa0; margin: 10px 0;">Our Lady Undoer of Knots</h2>
+            <p>"Mary, Undoer of Knots, pray for us"</p>
+        </div>
+
+        <div class="phase-indicator" id="phaseIndicator">
+            <h3 id="phaseTitle">PETITION PHASE</h3>
+            <p id="phaseDescription">Days 1-27: Asking Our Lady for specific graces and intentions</p>
+        </div>
+
+        <div class="progress-tracker">
+            <h3>Your Progress</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p id="progressText">Day 1 of 54</p>
+        </div>
+
+        <div class="navigation">
+            <div class="nav-section">
+                <h4>Navigation</h4>
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <button id="groupViewBtn" class="group-btn active" onclick="switchToGroupView()" style="margin-right: 10px;">9-Day Groups</button>
+                    <button id="allDaysBtn" class="group-btn" onclick="switchToAllDaysView()">All 54 Days</button>
+                </div>
+                
+                <div id="groupNavigation">
+                    <h4>Select Days</h4>
+                    <div class="group-selector" id="groupSelector">
+                        <!-- Group buttons will be generated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <h4 id="daySelectTitle">Select Day</h4>
+                <div class="day-selector" id="daySelector">
+                    <!-- Day buttons will be generated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <div class="novena-content" id="novenaContent">
+            <!-- Daily content will be generated by JavaScript -->
+        </div>
+
+        <div class="quick-nav">
+            <button onclick="previousDay()" title="Previous Day">←</button>
+            <button onclick="nextDay()" title="Next Day">→</button>
+            <button onclick="markComplete()" title="Mark Complete">✓</button>
+        </div>
+    </div>
+
+    <script>
+        let currentDay = 1;
+        const totalDays = 54;
+        let completedDays = new Set();
+
+        // Rosary Mysteries
+        const mysteries = {
+            joyful: [
+                "The Annunciation to Mary",
+                "The Visitation of Mary to Elizabeth", 
+                "The Birth of Our Lord Jesus Christ",
+                "The Presentation of Jesus in the Temple",
+                "The Finding of Jesus in the Temple"
+            ],
+            sorrowful: [
+                "The Agony of Jesus in the Garden",
+                "The Scourging of Jesus at the Pillar",
+                "The Crowning of Jesus with Thorns", 
+                "Jesus Carries His Cross",
+                "The Crucifixion and Death of Jesus"
+            ],
+            glorious: [
+                "The Resurrection of Jesus from the Dead",
+                "The Ascension of Jesus into Heaven",
+                "The Descent of the Holy Spirit upon the Apostles",
+                "The Assumption of Mary into Heaven",
+                "The Coronation of Mary as Queen of Heaven"
+            ],
+            luminous: [
+                "The Baptism of Jesus in the Jordan",
+                "The Wedding Feast at Cana",
+                "Jesus Proclaims the Kingdom of God",
+                "The Transfiguration of Jesus",
+                "The Institution of the Eucharist"
+            ]
+        };
+
+        // Mystery schedule (cycles every 4 days)
+        function getMystery(day) {
+            const cycle = (day - 1) % 4;
+            if (cycle === 0) return { name: 'Joyful', mysteries: mysteries.joyful };
+            if (cycle === 1) return { name: 'Sorrowful', mysteries: mysteries.sorrowful };
+            if (cycle === 2) return { name: 'Glorious', mysteries: mysteries.glorious };
+            return { name: 'Luminous', mysteries: mysteries.luminous };
+        }
+
+        // Daily meditations (9-day cycle)
+        const meditations = {
+            1: {
+                title: "Trust and Surrender",
+                text: `Dearest Holy Mother, Most Holy Mary, you undo the knots that suffocate your children, extend your merciful hands to me. I entrust to You today this knot and all the negative consequences that it provokes in my life. I give you this knot that torments me and makes me unhappy and so impedes me from uniting myself to You and Your Son Jesus, my Savior.
+
+I run to You, Mary, Undoer of Knots because I trust you and I know that you never despise a sinning child who comes to ask you for help. I believe that you can undo this knot because Jesus grants you everything. I believe that you want to undo this knot because you are my Mother. I believe that You will do this because you love me with eternal love.
+
+Thank you, Dear Mother. Mary, Undoer of Knots, pray for me.`,
+                quote: "The one who seeks grace, finds it in Mary's hands."
+            },
+            2: {
+                title: "Humility and Virtue",
+                text: `Mary, Beloved Mother, channel of all grace, I return to You today my heart, recognizing that I am a sinner in need of your help. Many times I lose the graces you grant me because of my sins of egoism, pride, rancor and my lack of generosity and humility. I turn to You today, Mary, Undoer of knots, for You to ask your Son Jesus to grant me a pure, divested, humble and trusting heart. I will live today practicing these virtues and offering you this as a sign of my love for You. I entrust into Your hands this knot which keeps me from reflecting the glory of God.
+
+Mary, Undoer of Knots, pray for me.`,
+                quote: "Mary offered all the moments of her day to God."
+            },
+            3: {
+                title: "Forgiveness and Healing",
+                text: `Our Lady Undoer of Knots, Meditating Mother, Queen of heaven, in whose hands the treasures of the King are found, turn your merciful eyes upon me today. I entrust into your holy hands this knot in my life and all the rancor and resentment it has caused in me. I ask Your forgiveness, God the Father, for my sin. Help me now to forgive all the persons who consciously or unconsciously provoked this knot. Give me, also, the grace to forgive me for having provoked this knot. Only in this way can You undo it. Before You, dearest Mother, and in the name of Your Son Jesus, my Savior, who has suffered so many offenses, having been granted forgiveness, I now forgive these persons and myself, forever. Thank you, Mary, Undoer of Knots for undoing the knot of rancor in my heart and the knot which I now present to you. Amen.
+
+Mary, Undoer of Knots, pray for me.`,
+                quote: "Turn to Mary, you who desire grace."
+            },
+            4: {
+                title: "Faith and Perseverance",
+                text: `Our Lady Undoer of Knots, Dearest Holy Mother, you are generous with all who seek you, have mercy on me. I entrust into your hands this knot which robs the peace of my heart, paralyzes my soul and keeps me from going to my Lord and serving Him with my life. Undo this knot in my love, O mother, and ask Jesus to heal my paralytic faith which gets down hearted with the stones on the road. Along with you, dearest Mother, may I see these stones as friends. Not murmuring against them anymore but giving endless thanks for them, may I smile trustingly in your power.
+
+Mary, Undoer of Knots, pray for me.`,
+                quote: "Mary is the Sun and no one is deprived of her warmth."
+            },
+            5: {
+                title: "Peace and the Holy Spirit",
+                text: `Our Lady Undoer of Knots, Mother, Undoer of Knots, generous and compassionate, I come to You today to once again entrust this knot in my life to you and to ask the divine wisdom to undo, under the light of the Holy Spirit, this snarl of problems. No one ever saw you angry; to the contrary, your words were so charged with sweetness that the Holy Spirit was manifested on your lips. Take away from me the bitterness, anger and hatred which this knot has caused me. Give me, o dearest Mother, some of the sweetness and wisdom that is all silently reflected in your heart. And just as you were present at Pentecost, ask Jesus to send me a new presence of the Holy Spirit at this moment in my life. Holy Spirit, come upon me!
+
+Mary, Undoer of Knots, pray for me.`,
+                quote: "Mary, with God, is powerful."
+            },
+            6: {
+                title: "Patience and Grace",
+                text: `Our Lady Undoer of Knots, Queen of Mercy, I entrust to you this knot in my life and I ask you to give me a heart that is patient until you undo it. Teach me to persevere in the living word of Jesus, in the Eucharist, the Sacrament of Confession; stay with me and prepare my heart to celebrate with the angels the grace that will be granted to me. Amen! Alleluia!
+
+Mary, Undoer of Knots, pray for me.`,
+                quote: "You are beautiful, Mary, and there is no stain of sin in You."
+            },
+            7: {
+                title: "Freedom from Evil",
+                text: `Our Lady Undoer of Knots, Mother Most Pure, I come to You today to beg you to undo this knot in my life and free me from the snares of Evil. God has granted you great power over all the demons. I renounce all of them today, every connection I have had with them and I proclaim Jesus as my one and only Lord and Savior. Mary, Undoer of Knots, crush the evil one's head and destroy the traps he has set for me by this knot. Thank you, dearest Mother. Most Precious Blood of Jesus, free me!
+
+Mary, Undoer of Knots, pray for me.`,
+                quote: "You are the glory of Jerusalem, the joy of our people."
+            },
+            8: {
+                title: "Consecration and Service",
+                text: `Our Lady Undoer of Knots, Virgin Mother of God, overflowing with mercy, have mercy on your child and undo this knot in my life. I need your visit to my life, like you visited Elizabeth. Bring me Jesus, bring me the Holy Spirit. Teach me to practice the virtues of courage, joyfulness, humility and faith, and, like Elizabeth, to be filled with the Holy Spirit. Make me joyfully rest on your bosom, Mary. I consecrate you as my mother, Queen and friend. I give you my heart and everything I have (my home and family, my material and spiritual goods.) I am yours forever. Put your heart in me so that I can do everything Jesus tells me.
+
+Mary, Undoer of Knots, pray for me.`,
+                quote: "Let us go, therefore, full of trust, to the throne of grace."
+            },
+            9: {
+                title: "Gratitude and Trust",
+                text: `Our Lady Undoer of Knots, Most Holy Mary, our Advocate, Undoer of Knots, I come today to thank you for undoing this knot in my life. You know very well the suffering it has caused me. Thank you for coming, Mother, with your long fingers of mercy to dry the tears in my eyes; you receive me in your arms and make it possible for me to receive once again the divine grace.
+
+Mary, Undoer of Knots, dearest Mother, I thank you for undoing the knots in my life. Wrap me in your mantle of love, keep me under your protection, enlighten me with your peace! Amen.
+
+Mary, Undoer of Knots, pray for me.`,
+                quote: "Mary, Undoer of Knots, wrap us in your mantle of love."
+            }
+        };
+
+        let viewMode = 'groups'; // 'groups' or 'alldays'
+
+        // Generate group buttons (6 groups of 9 days each)
+        function generateGroupButtons() {
+            const groupSelector = document.getElementById('groupSelector');
+            groupSelector.innerHTML = '';
+            
+            const groupNames = [
+                'Days 1-9',
+                'Days 10-18', 
+                'Days 19-27',
+                'Days 28-36',
+                'Days 37-45',
+                'Days 46-54'
+            ];
+            
+            for (let group = 1; group <= 6; group++) {
+                const btn = document.createElement('button');
+                btn.className = 'group-btn';
+                btn.textContent = groupNames[group - 1];
+                btn.onclick = () => selectGroup(group);
+                groupSelector.appendChild(btn);
+            }
+        }
+
+        // Generate day buttons for selected group
+        function generateDayButtons(group = 1) {
+            const daySelector = document.getElementById('daySelector');
+            daySelector.innerHTML = '';
+            
+            const startDay = (group - 1) * 9 + 1;
+            const endDay = group * 9;
+            
+            for (let day = startDay; day <= endDay; day++) {
+                const btn = document.createElement('button');
+                btn.className = 'day-btn';
+                if (completedDays.has(day)) btn.classList.add('completed');
+                if (day === currentDay) btn.classList.add('active');
+                btn.textContent = day;
+                btn.onclick = () => showDay(day);
+                daySelector.appendChild(btn);
+            }
+        }
+
+        function selectGroup(group) {
+            // Update group button states
+            document.querySelectorAll('.group-btn').forEach((btn, index) => {
+                if (index >= 2) { // Skip the view toggle buttons
+                    btn.classList.toggle('active', index - 1 === group);
+                }
+            });
+            
+            // Generate day buttons for selected group
+            generateDayButtons(group);
+        }
+
+        function switchToGroupView() {
+            viewMode = 'groups';
+            localStorage.setItem('viewMode', 'groups');
+            document.getElementById('groupViewBtn').classList.add('active');
+            document.getElementById('allDaysBtn').classList.remove('active');
+            document.getElementById('groupNavigation').style.display = 'block';
+            
+            const currentGroup = Math.ceil(currentDay / 9);
+            generateGroupButtons();
+            selectGroup(currentGroup);
+        }
+
+        function switchToAllDaysView() {
+            viewMode = 'alldays';
+            localStorage.setItem('viewMode', 'alldays');
+            document.getElementById('allDaysBtn').classList.add('active');
+            document.getElementById('groupViewBtn').classList.remove('active');
+            document.getElementById('groupNavigation').style.display = 'none';
+            
+            generateAllDayButtons();
+        }
+
+        function generateAllDayButtons() {
+            const daySelector = document.getElementById('daySelector');
+            daySelector.innerHTML = '';
+            
+            for (let day = 1; day <= 54; day++) {
+                const btn = document.createElement('button');
+                btn.className = 'day-btn';
+                if (completedDays.has(day)) btn.classList.add('completed');
+                if (day === currentDay) btn.classList.add('active');
+                btn.textContent = day;
+                btn.onclick = () => showDay(day);
+                daySelector.appendChild(btn);
+            }
+        }
+
+        function showDay(day) {
+            currentDay = day;
+            generateContent(day);
+            updateProgress();
+            updatePhaseIndicator();
+            
+            // Update navigation based on view mode
+            if (viewMode === 'groups') {
+                const currentGroup = Math.ceil(day / 9);
+                selectGroup(currentGroup);
+            } else {
+                generateAllDayButtons();
+            }
+            
+            // Save progress
+            localStorage.setItem('novenaProgress', day);
+            localStorage.setItem('completedDays', JSON.stringify([...completedDays]));
+        }
+
+        function generateContent(day) {
+            const content = document.getElementById('novenaContent');
+            const mystery = getMystery(day);
+            const meditationDay = ((day - 1) % 9) + 1;
+            const meditation = meditations[meditationDay];
+            const isPetition = day <= 27;
+            const phaseText = isPetition ? "PETITION" : "THANKSGIVING";
+            const groupNumber = Math.ceil(day / 9);
+            const dayInGroup = ((day - 1) % 9) + 1;
+            
+            content.innerHTML = `
+                <div class="day-content active">
+                    <h2 class="day-title">Day ${day} - ${phaseText} PHASE</h2>
+                    
+                    <div class="rosary-mystery">
+                        <h4>Today's Rosary: ${mystery.name} Mysteries</h4>
+                        <ul class="mystery-list">
+                            ${mystery.mysteries.map((m, i) => `<li>${i + 1}. ${m}</li>`).join('')}
+                        </ul>
+                    </div>
+
+                    <!-- Step 1: Sign of the Cross -->
+                    <div class="prayer-step">
+                        <h3>1. Sign of the Cross</h3>
+                        <p class="prayer-text">In the name of the Father, and of the Son, and of the Holy Spirit. Amen.</p>
+                    </div>
+
+                    <!-- Step 2: Act of Contrition -->
+                    <div class="prayer-step">
+                        <h3>2. Act of Contrition</h3>
+                        <p class="prayer-text">Oh my God I am heartily sorry for having offended you. I detest all my sins because I dread the loss of Heaven and the pains of Hell. But most of all, because I offended you, oh my God, who are all good and deserving of all my love. I firmly resolve, with the help of your grace, to confess my sins, to do penance, and to amend my life. Amen</p>
+                    </div>
+
+                    <!-- Step 3: Apostles' Creed -->
+                    <div class="prayer-step">
+                        <h3>3. Apostles' Creed</h3>
+                        <p class="prayer-text">I believe in God, the Father almighty, Creator of heaven and earth, and in Jesus Christ, his only Son, our Lord, who was conceived by the Holy Spirit, born of the Virgin Mary, suffered under Pontius Pilate, was crucified, died and was buried; he descended into hell; on the third day he rose again from the dead; he ascended into heaven, and is seated at the right hand of God the Father almighty; from there he will come to judge the living and the dead. I believe in the Holy Spirit, the holy catholic Church, the communion of saints, the forgiveness of sins, the resurrection of the body, and life everlasting. Amen.</p>
+                    </div>
+
+                    <!-- Step 4: Our Father -->
+                    <div class="prayer-step">
+                        <h3>4. Our Father</h3>
+                        <p class="prayer-text">Our Father, who art in heaven, hallowed be thy name; thy kingdom come; thy will be done on earth as it is in heaven. Give us this day our daily bread; and forgive us our trespasses as we forgive those who trespass against us; and lead us not into temptation, but deliver us from evil. Amen.</p>
+                    </div>
+
+                    <!-- Step 5: Three Hail Marys -->
+                    <div class="prayer-step">
+                        <h3>5. Three Hail Marys (for Faith, Hope, and Charity)</h3>
+                        <div class="prayer-count">Say 3 times:</div>
+                        <p class="prayer-text">Hail Mary, full of grace, the Lord is with thee; blessed art thou among women, and blessed is the fruit of thy womb, Jesus. Holy Mary, Mother of God, pray for us sinners, now and at the hour of our death. Amen.</p>
+                    </div>
+
+                    <!-- Step 6: Glory Be -->
+                    <div class="prayer-step">
+                        <h3>6. Glory Be</h3>
+                        <p class="prayer-text">Glory be to the Father, and to the Son, and to the Holy Spirit; as it was in the beginning, is now, and ever shall be, world without end. Amen.</p>
+                    </div>
+
+                    <!-- First Three Decades -->
+                    ${mystery.mysteries.slice(0, 3).map((mysteryText, index) => `
+                        <div class="decade">
+                            <h4>${index + 1}st Decade: ${mysteryText}</h4>
+                            <div class="prayer-instruction">Meditate on this mystery while praying</div>
+                            
+                            <p><strong>Our Father:</strong></p>
+                            <p class="prayer-text">Our Father, who art in heaven, hallowed be thy name; thy kingdom come; thy will be done on earth as it is in heaven. Give us this day our daily bread; and forgive us our trespasses as we forgive those who trespass against us; and lead us not into temptation, but deliver us from evil. Amen.</p>
+                            
+                            <div class="prayer-count">Say 10 times:</div>
+                            <p class="prayer-text"><strong>Hail Mary:</strong> Hail Mary, full of grace, the Lord is with thee; blessed art thou among women, and blessed is the fruit of thy womb, Jesus. Holy Mary, Mother of God, pray for us sinners, now and at the hour of our death. Amen.</p>
+                            
+                            <p><strong>Glory Be:</strong></p>
+                            <p class="prayer-text">Glory be to the Father, and to the Son, and to the Holy Spirit; as it was in the beginning, is now, and ever shall be, world without end. Amen.</p>
+                            
+                            <p><strong>Fatima Prayer:</strong></p>
+                            <p class="prayer-text">O my Jesus, forgive us our sins, save us from the fires of hell, lead all souls to Heaven, especially those most in need of Thy mercy.</p>
+                        </div>
+                    `).join('')}
+
+                    <!-- Daily Meditation -->
+                    <div class="meditation-section">
+                        <h3>Meditation for Day ${day}: ${meditation.title}</h3>
+                        ${isPetition ? 
+                            `<p style="font-weight: bold; color: #2c5aa0; text-align: center; margin-bottom: 15px;">
+                                🙏 PETITION PHASE: Today I ask Our Lady to intercede for my intentions and to undo the knots in my life.
+                            </p>` : 
+                            `<p style="font-weight: bold; color: #4CAF50; text-align: center; margin-bottom: 15px;">
+                                🌟 THANKSGIVING PHASE: Today I thank Our Lady for her intercession, trusting in her love regardless of the outcome.
+                            </p>`
+                        }
+                        <p class="prayer-text">${meditation.text}</p>
+                        <div class="quote">${meditation.quote}</div>
+                    </div>
+
+                    <!-- Last Two Decades -->
+                    ${mystery.mysteries.slice(3, 5).map((mysteryText, index) => `
+                        <div class="decade">
+                            <h4>${index + 4}th Decade: ${mysteryText}</h4>
+                            <div class="prayer-instruction">Meditate on this mystery while praying</div>
+                            
+                            <p><strong>Our Father:</strong></p>
+                            <p class="prayer-text">Our Father, who art in heaven, hallowed be thy name; thy kingdom come; thy will be done on earth as it is in heaven. Give us this day our daily bread; and forgive us our trespasses as we forgive those who trespass against us; and lead us not into temptation, but deliver us from evil. Amen.</p>
+                            
+                            <div class="prayer-count">Say 10 times:</div>
+                            <p class="prayer-text"><strong>Hail Mary:</strong> Hail Mary, full of grace, the Lord is with thee; blessed art thou among women, and blessed is the fruit of thy womb, Jesus. Holy Mary, Mother of God, pray for us sinners, now and at the hour of our death. Amen.</p>
+                            
+                            <p><strong>Glory Be:</strong></p>
+                            <p class="prayer-text">Glory be to the Father, and to the Son, and to the Holy Spirit; as it was in the beginning, is now, and ever shall be, world without end. Amen.</p>
+                            
+                            <p><strong>Fatima Prayer:</strong></p>
+                            <p class="prayer-text">O my Jesus, forgive us our sins, save us from the fires of hell, lead all souls to Heaven, especially those most in need of Thy mercy.</p>
+                        </div>
+                    `).join('')}
+
+                    <!-- Hail Holy Queen -->
+                    <div class="prayer-step">
+                        <h3>Hail Holy Queen</h3>
+                        <p class="prayer-text">Hail, Holy Queen, Mother of mercy, our life, our sweetness and our hope. To thee do we cry, poor banished children of Eve; to thee do we send up our sighs, mourning and weeping in this valley of tears. Turn then, most gracious advocate, thine eyes of mercy toward us, and after this our exile, show unto us the blessed fruit of thy womb, Jesus. O clement, O loving, O sweet Virgin Mary! Pray for us, O Holy Mother of God, that we may be made worthy of the promises of Christ.</p>
+                    </div>
+
+                    <!-- Final Prayer to Our Lady Undoer of Knots -->
+                    <div class="prayer-step">
+                        <h3>Prayer to Mary, Undoer of Knots (Closing Prayer)</h3>
+                        <p class="prayer-text">Virgin Mary, Mother of fair love, Mother who never refuses to come to the aid of a child in need, Mother whose hands never cease to serve your beloved children because they are moved by the divine love and immense mercy that exists in your heart, cast your compassionate eyes upon me and see the snarl of knots that exist in my life.</p>
+                        
+                        <p class="prayer-text">You know very well how desperate I am, my pain and how I am bound by these knots. Mary, Mother to whom God entrusted the undoing of the knots in the lives of His children, I entrust into your hands the ribbon of my life. No one, not even the evil one himself, can take it away from your precious care. In your hands there is no knot that cannot be undone.</p>
+                        
+                        <p class="prayer-text">Powerful Mother, by your grace and intercessory power with Your Son and My Liberator, Jesus, take into your hands today this knot...</p>
+                        
+                        <div style="background: rgba(255, 215, 0, 0.2); border: 2px solid #FFD700; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center;">
+                            <p style="color: #B8860B; font-weight: bold; margin-bottom: 10px;">🙏 HERE, MENTION YOUR SPECIFIC PETITION/INTENTION:</p>
+                            <p style="color: #8B4513; font-style: italic;">(Silently or aloud, state your specific request, problem, or intention that you want Our Lady to help with)</p>
+                        </div>
+                        
+                        <p class="prayer-text">...I beg you to undo it for the glory of God, once for all, You are my hope. O my Lady, you are the only consolation God gives me, the fortification of my feeble strength, the enrichment of my destitution and with Christ the freedom from my chains.</p>
+                        
+                        <p class="prayer-text">Hear my plea. Keep me, guide me, protect me, o safe refuge!</p>
+                        
+                        <p class="prayer-text">Mary, Undoer of Knots, pray for me</p>
+                    </div>
+
+                    <!-- Final Sign of the Cross -->
+                    <div class="prayer-step">
+                        <h3>Final Sign of the Cross</h3>
+                        <p class="prayer-text">In the name of the Father, and of the Son, and of the Holy Spirit. Amen.</p>
+                    </div>
+
+                    <button class="completion-btn" onclick="markComplete()">
+                        Mark Day ${day} Complete ✓
+                    </button>
+                </div>
+            `;
+        }
+
+        function updateProgress() {
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            const percentage = (currentDay / totalDays) * 100;
+            progressFill.style.width = percentage + '%';
+            progressText.textContent = `Day ${currentDay} of ${totalDays} (${completedDays.size} completed)`;
+        }
+
+        function updatePhaseIndicator() {
+            const phaseIndicator = document.getElementById('phaseIndicator');
+            const phaseTitle = document.getElementById('phaseTitle');
+            const phaseDescription = document.getElementById('phaseDescription');
+            
+            if (currentDay <= 27) {
+                phaseIndicator.className = 'phase-indicator petition-phase';
+                phaseTitle.textContent = 'PETITION PHASE';
+                phaseDescription.textContent = `Days 1-27: Asking Our Lady for specific graces and intentions (Day ${currentDay})`;
+            } else {
+                phaseIndicator.className = 'phase-indicator thanksgiving-phase';
+                phaseTitle.textContent = 'THANKSGIVING PHASE';
+                phaseDescription.textContent = `Days 28-54: Thanking Our Lady regardless of outcome (Day ${currentDay})`;
+            }
+        }
+
+        function markComplete() {
+            completedDays.add(currentDay);
+            localStorage.setItem('completedDays', JSON.stringify([...completedDays]));
+            
+            // Update day button appearance based on view mode
+            if (viewMode === 'groups') {
+                const currentGroup = Math.ceil(currentDay / 9);
+                generateDayButtons(currentGroup);
+            } else {
+                generateAllDayButtons();
+            }
+            updateProgress();
+            
+            // Show success message
+            const btn = document.querySelector('.completion-btn');
+            const originalText = btn.textContent;
+            btn.textContent = '✓ Day Completed!';
+            btn.style.background = '#4CAF50';
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.background = '#4CAF50';
+            }, 2000);
+        }
+
+        function previousDay() {
+            if (currentDay > 1) {
+                showDay(currentDay - 1);
+            }
+        }
+
+        function nextDay() {
+            if (currentDay < totalDays) {
+                showDay(currentDay + 1);
+            }
+        }
+
+        // Initialize page
+        window.addEventListener('load', function() {
+            // Load saved progress
+            const savedProgress = localStorage.getItem('novenaProgress');
+            const savedCompleted = localStorage.getItem('completedDays');
+            const savedViewMode = localStorage.getItem('viewMode') || 'groups';
+            
+            if (savedProgress) {
+                currentDay = parseInt(savedProgress);
+            }
+            
+            if (savedCompleted) {
+                completedDays = new Set(JSON.parse(savedCompleted));
+            }
+            
+            viewMode = savedViewMode;
+            
+            // Initialize UI
+            generateGroupButtons();
+            if (viewMode === 'groups') {
+                switchToGroupView();
+            } else {
+                switchToAllDaysView();
+            }
+            showDay(currentDay);
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') previousDay();
+            if (e.key === 'ArrowRight') nextDay();
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                markComplete();
+            }
+        });
+    </script>
+</body>
+</html>
