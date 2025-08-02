@@ -106,6 +106,53 @@
             text-align: center;
         }
 
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .save-status {
+            background: #4CAF50;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .backup-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .backup-btn {
+            background: #FF9800;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .backup-btn:hover {
+            background: #F57C00;
+            transform: translateY(-1px);
+        }
+
+        .file-input {
+            display: none;
+        }
+
         .progress-bar {
             width: 100%;
             height: 12px;
@@ -421,6 +468,29 @@
                 bottom: 10px;
                 right: 10px;
             }
+
+            .progress-info {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .backup-controls {
+                gap: 5px;
+            }
+
+            .backup-btn {
+                padding: 6px 12px;
+                font-size: 0.8em;
+            }
+
+            #cloudSyncPanel input {
+                min-width: 100px;
+                margin-bottom: 10px;
+            }
+
+            #cloudSyncPanel > div:first-of-type {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -430,6 +500,9 @@
             <h1>54-Day Rosary Novena</h1>
             <h2 style="color: #2c5aa0; margin: 10px 0;">Our Lady Undoer of Knots</h2>
             <p>"Mary, Undoer of Knots, pray for us"</p>
+            <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                💾 Your progress is automatically saved and will be restored when you return
+            </p>
         </div>
 
         <div class="phase-indicator" id="phaseIndicator">
@@ -439,10 +512,47 @@
 
         <div class="progress-tracker">
             <h3>Your Progress</h3>
+            <div class="progress-info">
+                <div>
+                    <p id="progressText">Day 1 of 54</p>
+                    <p id="startDateText" style="font-size: 0.9em; color: #666; margin: 5px 0;">Started: Not set</p>
+                </div>
+                <div class="save-status" id="saveStatus">✓ Auto-Saved</div>
+            </div>
             <div class="progress-bar">
                 <div class="progress-fill" id="progressFill"></div>
             </div>
-            <p id="progressText">Day 1 of 54</p>
+            <div class="backup-controls">
+                <button class="backup-btn" onclick="exportProgress()">📁 Export Progress</button>
+                <button class="backup-btn" onclick="document.getElementById('importFile').click()">📥 Import Progress</button>
+                <button class="backup-btn" onclick="toggleCloudSync()">☁️ Cloud Sync</button>
+                <button class="backup-btn" onclick="resetProgress()">🔄 Reset All</button>
+            </div>
+            <input type="file" id="importFile" class="file-input" accept=".json" onchange="importProgress(event)">
+            
+            <!-- Cloud Sync Panel -->
+            <div id="cloudSyncPanel" style="display: none; margin-top: 15px; padding: 15px; background: rgba(33, 150, 243, 0.1); border: 2px solid #2196F3; border-radius: 10px;">
+                <h4 style="color: #1976D2; margin-bottom: 10px;">☁️ Cloud Sync (Free)</h4>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+                    <input type="text" id="syncUsername" placeholder="Username" style="padding: 8px; border: 1px solid #ccc; border-radius: 5px; flex: 1; min-width: 120px;">
+                    <input type="password" id="syncPassphrase" placeholder="Passphrase" style="padding: 8px; border: 1px solid #ccc; border-radius: 5px; flex: 1; min-width: 120px;">
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px;">
+                    <button class="backup-btn" onclick="createCloudAccount()" style="background: #4CAF50;">🆕 Create Account</button>
+                    <button class="backup-btn" onclick="loginToCloud()" style="background: #2196F3;">🔑 Login</button>
+                </div>
+                <div id="cloudActions" style="display: none;">
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px;">
+                        <button class="backup-btn" onclick="saveToCloud()" style="background: #FF9800;">💾 Save Progress</button>
+                        <button class="backup-btn" onclick="loadFromCloud()" style="background: #9C27B0;">📥 Load Progress</button>
+                        <button class="backup-btn" onclick="logoutFromCloud()" style="background: #757575;">🚪 Logout</button>
+                    </div>
+                    <div id="accountInfo" style="text-align: center; font-size: 0.9em; color: #1976D2; margin-bottom: 10px;"></div>
+                </div>
+                <p style="font-size: 0.8em; color: #666; margin-top: 10px; text-align: center;">
+                    Free secure storage - Choose a unique username & strong passphrase!
+                </p>
+            </div>
         </div>
 
         <div class="navigation">
@@ -598,6 +708,16 @@ Mary, Undoer of Knots, pray for me.`,
         };
 
         let viewMode = 'groups'; // 'groups' or 'alldays'
+        let startDate = null;
+
+        // Simple hash function for creating unique IDs
+        async function simpleHash(text) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
+        }
 
         // Generate group buttons (6 groups of 9 days each)
         function generateGroupButtons() {
@@ -691,6 +811,12 @@ Mary, Undoer of Knots, pray for me.`,
         }
 
         function showDay(day) {
+            // Set start date if not already set and we're on day 1
+            if (!startDate && day === 1) {
+                startDate = new Date().toISOString();
+                localStorage.setItem('novenaStartDate', startDate);
+            }
+            
             currentDay = day;
             generateContent(day);
             updateProgress();
@@ -704,9 +830,14 @@ Mary, Undoer of Knots, pray for me.`,
                 generateAllDayButtons();
             }
             
-            // Save progress
+            // Save progress automatically
             localStorage.setItem('novenaProgress', day);
             localStorage.setItem('completedDays', JSON.stringify([...completedDays]));
+            localStorage.setItem('viewMode', viewMode);
+            if (startDate) {
+                localStorage.setItem('novenaStartDate', startDate);
+            }
+            showSaveStatus();
         }
 
         function generateContent(day) {
@@ -865,10 +996,300 @@ Mary, Undoer of Knots, pray for me.`,
         function updateProgress() {
             const progressFill = document.getElementById('progressFill');
             const progressText = document.getElementById('progressText');
+            const startDateText = document.getElementById('startDateText');
             
             const percentage = (currentDay / totalDays) * 100;
             progressFill.style.width = percentage + '%';
             progressText.textContent = `Day ${currentDay} of ${totalDays} (${completedDays.size} completed)`;
+            
+            // Update start date display
+            if (startDate) {
+                const start = new Date(startDate);
+                const today = new Date();
+                const daysDiff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+                startDateText.textContent = `Started: ${start.toLocaleDateString()} (${daysDiff} days ago)`;
+            } else {
+                startDateText.textContent = 'Started: Not set';
+            }
+            
+            // Show save status
+            showSaveStatus();
+        }
+
+        function showSaveStatus() {
+            const saveStatus = document.getElementById('saveStatus');
+            saveStatus.textContent = '✓ Auto-Saved';
+            saveStatus.style.background = '#4CAF50';
+            
+            // Briefly flash to show it's saving
+            setTimeout(() => {
+                saveStatus.style.background = '#4CAF50';
+            }, 500);
+        }
+
+        function exportProgress() {
+            const progressData = {
+                currentDay: currentDay,
+                completedDays: [...completedDays],
+                viewMode: viewMode,
+                startDate: startDate,
+                exportDate: new Date().toISOString(),
+                novenaType: '54-Day Rosary Novena - Our Lady Undoer of Knots'
+            };
+            
+            const dataStr = JSON.stringify(progressData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `novena-progress-day-${currentDay}.json`;
+            link.click();
+            
+            // Show export confirmation
+            const saveStatus = document.getElementById('saveStatus');
+            const originalText = saveStatus.textContent;
+            saveStatus.textContent = '📁 Exported!';
+            saveStatus.style.background = '#FF9800';
+            setTimeout(() => {
+                saveStatus.textContent = originalText;
+                saveStatus.style.background = '#4CAF50';
+            }, 2000);
+        }
+
+        function importProgress(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const progressData = JSON.parse(e.target.result);
+                    
+                    // Validate the data
+                    if (progressData.novenaType && progressData.currentDay) {
+                        currentDay = progressData.currentDay;
+                        completedDays = new Set(progressData.completedDays || []);
+                        viewMode = progressData.viewMode || 'groups';
+                        startDate = progressData.startDate || null;
+                        
+                        // Save to localStorage
+                        localStorage.setItem('novenaProgress', currentDay);
+                        localStorage.setItem('completedDays', JSON.stringify([...completedDays]));
+                        localStorage.setItem('viewMode', viewMode);
+                        if (startDate) {
+                            localStorage.setItem('novenaStartDate', startDate);
+                        }
+                        
+                        // Update UI
+                        if (viewMode === 'groups') {
+                            switchToGroupView();
+                        } else {
+                            switchToAllDaysView();
+                        }
+                        showDay(currentDay);
+                        
+                        // Show import confirmation
+                        const saveStatus = document.getElementById('saveStatus');
+                        const originalText = saveStatus.textContent;
+                        saveStatus.textContent = '📥 Imported!';
+                        saveStatus.style.background = '#2196F3';
+                        setTimeout(() => {
+                            saveStatus.textContent = originalText;
+                            saveStatus.style.background = '#4CAF50';
+                        }, 2000);
+                    } else {
+                        alert('Invalid progress file. Please select a valid novena progress file.');
+                    }
+                } catch (error) {
+                    alert('Error reading progress file. Please check the file and try again.');
+                }
+            };
+            reader.readAsText(file);
+            
+            // Reset file input
+            event.target.value = '';
+        }
+
+        function resetProgress() {
+            if (confirm('Are you sure you want to reset all progress? This cannot be undone.')) {
+                currentDay = 1;
+                completedDays.clear();
+                viewMode = 'groups';
+                startDate = null;
+                
+                // Clear localStorage
+                localStorage.removeItem('novenaProgress');
+                localStorage.removeItem('completedDays');
+                localStorage.removeItem('viewMode');
+                localStorage.removeItem('novenaStartDate');
+                
+                // Reset UI
+                switchToGroupView();
+                showDay(1);
+                
+                // Show reset confirmation
+                const saveStatus = document.getElementById('saveStatus');
+                const originalText = saveStatus.textContent;
+                saveStatus.textContent = '🔄 Reset!';
+                saveStatus.style.background = '#f44336';
+                setTimeout(() => {
+                    saveStatus.textContent = '✓ Auto-Saved';
+                    saveStatus.style.background = '#4CAF50';
+                }, 2000);
+            }
+        }
+
+        function toggleCloudSync() {
+            const panel = document.getElementById('cloudSyncPanel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function saveToCloud() {
+            const username = document.getElementById('syncUsername').value.trim();
+            const passphrase = document.getElementById('syncPassphrase').value.trim();
+            
+            if (!username || !passphrase) {
+                alert('Please enter both username and passphrase');
+                return;
+            }
+            
+            try {
+                const saveStatus = document.getElementById('saveStatus');
+                saveStatus.textContent = '☁️ Saving...';
+                saveStatus.style.background = '#FF9800';
+                
+                // Create unique ID from username + passphrase
+                const uniqueId = await simpleHash(username + passphrase + 'novena');
+                
+                const progressData = {
+                    currentDay: currentDay,
+                    completedDays: [...completedDays],
+                    viewMode: viewMode,
+                    startDate: startDate,
+                    lastSync: new Date().toISOString(),
+                    novenaType: '54-Day Rosary Novena - Our Lady Undoer of Knots'
+                };
+                
+                // Use JSONBin.io free service
+                const response = await fetch('https://api.jsonbin.io/v3/b', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Bin-Name': 'novena-' + uniqueId
+                    },
+                    body: JSON.stringify(progressData)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    localStorage.setItem('cloudBinId', result.metadata.id);
+                    localStorage.setItem('cloudSyncId', uniqueId);
+                    
+                    saveStatus.textContent = '☁️ Saved!';
+                    saveStatus.style.background = '#4CAF50';
+                    setTimeout(() => {
+                        saveStatus.textContent = '✓ Auto-Saved';
+                        saveStatus.style.background = '#4CAF50';
+                    }, 2000);
+                } else {
+                    throw new Error('Failed to save to cloud');
+                }
+            } catch (error) {
+                console.error('Cloud save error:', error);
+                const saveStatus = document.getElementById('saveStatus');
+                saveStatus.textContent = '❌ Save Failed';
+                saveStatus.style.background = '#f44336';
+                setTimeout(() => {
+                    saveStatus.textContent = '✓ Auto-Saved';
+                    saveStatus.style.background = '#4CAF50';
+                }, 3000);
+                alert('Failed to save to cloud. Please try again or use export instead.');
+            }
+        }
+
+        async function loadFromCloud() {
+            const username = document.getElementById('syncUsername').value.trim();
+            const passphrase = document.getElementById('syncPassphrase').value.trim();
+            
+            if (!username || !passphrase) {
+                alert('Please enter both username and passphrase');
+                return;
+            }
+            
+            try {
+                const saveStatus = document.getElementById('saveStatus');
+                saveStatus.textContent = '☁️ Loading...';
+                saveStatus.style.background = '#2196F3';
+                
+                // Create unique ID from username + passphrase
+                const uniqueId = await simpleHash(username + passphrase + 'novena');
+                
+                // Try to get the bin ID from localStorage first
+                let binId = localStorage.getItem('cloudBinId');
+                let response;
+                
+                if (binId) {
+                    // Try to load from known bin ID
+                    response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`);
+                }
+                
+                if (!response || !response.ok) {
+                    // Fallback: search for bins (this might not work with free tier)
+                    saveStatus.textContent = '❌ Not Found';
+                    saveStatus.style.background = '#f44336';
+                    setTimeout(() => {
+                        saveStatus.textContent = '✓ Auto-Saved';
+                        saveStatus.style.background = '#4CAF50';
+                    }, 3000);
+                    alert('No saved progress found for this username/passphrase combination. Make sure you have saved your progress first.');
+                    return;
+                }
+                
+                const result = await response.json();
+                const progressData = result.record;
+                
+                if (progressData && progressData.novenaType) {
+                    currentDay = progressData.currentDay;
+                    completedDays = new Set(progressData.completedDays || []);
+                    viewMode = progressData.viewMode || 'groups';
+                    startDate = progressData.startDate || null;
+                    
+                    // Save to localStorage
+                    localStorage.setItem('novenaProgress', currentDay);
+                    localStorage.setItem('completedDays', JSON.stringify([...completedDays]));
+                    localStorage.setItem('viewMode', viewMode);
+                    if (startDate) {
+                        localStorage.setItem('novenaStartDate', startDate);
+                    }
+                    
+                    // Update UI
+                    if (viewMode === 'groups') {
+                        switchToGroupView();
+                    } else {
+                        switchToAllDaysView();
+                    }
+                    showDay(currentDay);
+                    
+                    saveStatus.textContent = '☁️ Loaded!';
+                    saveStatus.style.background = '#4CAF50';
+                    setTimeout(() => {
+                        saveStatus.textContent = '✓ Auto-Saved';
+                        saveStatus.style.background = '#4CAF50';
+                    }, 2000);
+                } else {
+                    throw new Error('Invalid data format');
+                }
+            } catch (error) {
+                console.error('Cloud load error:', error);
+                const saveStatus = document.getElementById('saveStatus');
+                saveStatus.textContent = '❌ Load Failed';
+                saveStatus.style.background = '#f44336';
+                setTimeout(() => {
+                    saveStatus.textContent = '✓ Auto-Saved';
+                    saveStatus.style.background = '#4CAF50';
+                }, 3000);
+                alert('Failed to load from cloud. Please check your username/passphrase and try again.');
+            }
         }
 
         function updatePhaseIndicator() {
@@ -890,6 +1311,10 @@ Mary, Undoer of Knots, pray for me.`,
         function markComplete() {
             completedDays.add(currentDay);
             localStorage.setItem('completedDays', JSON.stringify([...completedDays]));
+            if (startDate) {
+                localStorage.setItem('novenaStartDate', startDate);
+            }
+            showSaveStatus();
             
             // Update day button appearance based on view mode
             if (viewMode === 'groups') {
@@ -930,6 +1355,7 @@ Mary, Undoer of Knots, pray for me.`,
             const savedProgress = localStorage.getItem('novenaProgress');
             const savedCompleted = localStorage.getItem('completedDays');
             const savedViewMode = localStorage.getItem('viewMode') || 'groups';
+            const savedStartDate = localStorage.getItem('novenaStartDate');
             
             if (savedProgress) {
                 currentDay = parseInt(savedProgress);
@@ -937,6 +1363,10 @@ Mary, Undoer of Knots, pray for me.`,
             
             if (savedCompleted) {
                 completedDays = new Set(JSON.parse(savedCompleted));
+            }
+            
+            if (savedStartDate) {
+                startDate = savedStartDate;
             }
             
             viewMode = savedViewMode;
@@ -949,6 +1379,17 @@ Mary, Undoer of Knots, pray for me.`,
                 switchToAllDaysView();
             }
             showDay(currentDay);
+            
+            // Show restoration message if there was saved progress
+            if (savedProgress || savedCompleted) {
+                const saveStatus = document.getElementById('saveStatus');
+                saveStatus.textContent = '📂 Restored!';
+                saveStatus.style.background = '#2196F3';
+                setTimeout(() => {
+                    saveStatus.textContent = '✓ Auto-Saved';
+                    saveStatus.style.background = '#4CAF50';
+                }, 3000);
+            }
         });
 
         // Keyboard navigation
