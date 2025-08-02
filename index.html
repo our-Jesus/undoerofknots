@@ -476,20 +476,34 @@
 
             .backup-controls {
                 gap: 5px;
+                flex-direction: column;
             }
 
             .backup-btn {
-                padding: 6px 12px;
-                font-size: 0.8em;
+                padding: 8px 15px;
+                font-size: 0.9em;
+                width: 100%;
             }
 
             #cloudSyncPanel input {
                 min-width: 100px;
-                margin-bottom: 10px;
+                margin-bottom: 5px;
+                width: 100%;
             }
 
-            #cloudSyncPanel > div:first-of-type {
+            #cloudSyncPanel > div:nth-child(2) {
                 flex-direction: column;
+                gap: 5px;
+            }
+
+            #cloudSyncPanel > div:nth-child(3) {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            #cloudActions > div:first-child {
+                flex-direction: column;
+                gap: 5px;
             }
         }
     </style>
@@ -501,7 +515,7 @@
             <h2 style="color: #2c5aa0; margin: 10px 0;">Our Lady Undoer of Knots</h2>
             <p>"Mary, Undoer of Knots, pray for us"</p>
             <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
-                💾 Your progress is automatically saved and will be restored when you return
+                💾 Your progress is automatically saved locally and can be synced to the cloud
             </p>
         </div>
 
@@ -709,6 +723,9 @@ Mary, Undoer of Knots, pray for me.`,
 
         let viewMode = 'groups'; // 'groups' or 'alldays'
         let startDate = null;
+        let isLoggedInToCloud = false;
+        let currentCloudUser = null;
+        let currentBinId = null;
 
         // Simple hash function for creating unique IDs
         async function simpleHash(text) {
@@ -1111,17 +1128,31 @@ Mary, Undoer of Knots, pray for me.`,
         }
 
         function resetProgress() {
-            if (confirm('Are you sure you want to reset all progress? This cannot be undone.')) {
+            if (confirm('Are you sure you want to reset all progress? This will also log you out of cloud sync. This cannot be undone.')) {
                 currentDay = 1;
                 completedDays.clear();
                 viewMode = 'groups';
                 startDate = null;
+                
+                // Reset cloud sync
+                isLoggedInToCloud = false;
+                currentCloudUser = null;
+                currentBinId = null;
                 
                 // Clear localStorage
                 localStorage.removeItem('novenaProgress');
                 localStorage.removeItem('completedDays');
                 localStorage.removeItem('viewMode');
                 localStorage.removeItem('novenaStartDate');
+                localStorage.removeItem('cloudBinId');
+                localStorage.removeItem('cloudUser');
+                localStorage.removeItem('cloudSyncId');
+                
+                // Reset cloud UI
+                hideCloudActions();
+                document.getElementById('syncUsername').value = '';
+                document.getElementById('syncPassphrase').value = '';
+                document.getElementById('accountInfo').textContent = '';
                 
                 // Reset UI
                 switchToGroupView();
@@ -1142,9 +1173,114 @@ Mary, Undoer of Knots, pray for me.`,
         function toggleCloudSync() {
             const panel = document.getElementById('cloudSyncPanel');
             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            
+            // Check if user was previously logged in
+            const savedUser = localStorage.getItem('cloudUser');
+            const savedBinId = localStorage.getItem('cloudBinId');
+            if (savedUser && savedBinId) {
+                currentCloudUser = savedUser;
+                currentBinId = savedBinId;
+                isLoggedInToCloud = true;
+                showCloudActions();
+                document.getElementById('syncUsername').value = currentCloudUser;
+                document.getElementById('accountInfo').textContent = `✓ Logged in as: ${currentCloudUser}`;
+            }
         }
 
-        async function saveToCloud() {
+        function showCloudActions() {
+            document.getElementById('cloudActions').style.display = 'block';
+        }
+
+        function hideCloudActions() {
+            document.getElementById('cloudActions').style.display = 'none';
+        }
+
+        async function createCloudAccount() {
+            const username = document.getElementById('syncUsername').value.trim();
+            const passphrase = document.getElementById('syncPassphrase').value.trim();
+            
+            if (!username || !passphrase) {
+                alert('Please enter both username and passphrase');
+                return;
+            }
+
+            if (username.length < 3) {
+                alert('Username must be at least 3 characters long');
+                return;
+            }
+
+            if (passphrase.length < 6) {
+                alert('Passphrase must be at least 6 characters long');
+                return;
+            }
+            
+            try {
+                const saveStatus = document.getElementById('saveStatus');
+                saveStatus.textContent = '🆕 Creating...';
+                saveStatus.style.background = '#FF9800';
+                
+                // Create unique ID from username + passphrase
+                const uniqueId = await simpleHash(username + passphrase + 'novena');
+                
+                // Check if account already exists by trying to create with a test payload
+                const testData = {
+                    accountType: 'novena-account',
+                    username: username,
+                    created: new Date().toISOString(),
+                    currentDay: currentDay,
+                    completedDays: [...completedDays],
+                    viewMode: viewMode,
+                    startDate: startDate,
+                    novenaType: '54-Day Rosary Novena - Our Lady Undoer of Knots'
+                };
+                
+                const response = await fetch('https://api.jsonbin.io/v3/b', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Bin-Name': 'novena-' + uniqueId,
+                        'X-Bin-Private': 'false'
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    currentBinId = result.metadata.id;
+                    currentCloudUser = username;
+                    isLoggedInToCloud = true;
+                    
+                    // Save credentials locally
+                    localStorage.setItem('cloudBinId', currentBinId);
+                    localStorage.setItem('cloudUser', username);
+                    localStorage.setItem('cloudSyncId', uniqueId);
+                    
+                    showCloudActions();
+                    document.getElementById('accountInfo').textContent = `✓ Account created! Logged in as: ${username}`;
+                    
+                    saveStatus.textContent = '🆕 Created!';
+                    saveStatus.style.background = '#4CAF50';
+                    setTimeout(() => {
+                        saveStatus.textContent = '✓ Auto-Saved';
+                        saveStatus.style.background = '#4CAF50';
+                    }, 2000);
+                } else {
+                    throw new Error('Failed to create account');
+                }
+            } catch (error) {
+                console.error('Account creation error:', error);
+                const saveStatus = document.getElementById('saveStatus');
+                saveStatus.textContent = '❌ Creation Failed';
+                saveStatus.style.background = '#f44336';
+                setTimeout(() => {
+                    saveStatus.textContent = '✓ Auto-Saved';
+                    saveStatus.style.background = '#4CAF50';
+                }, 3000);
+                alert('Failed to create account. This username may already exist, or there was a network error. Please try a different username or try again later.');
+            }
+        }
+
+        async function loginToCloud() {
             const username = document.getElementById('syncUsername').value.trim();
             const passphrase = document.getElementById('syncPassphrase').value.trim();
             
@@ -1155,13 +1291,95 @@ Mary, Undoer of Knots, pray for me.`,
             
             try {
                 const saveStatus = document.getElementById('saveStatus');
-                saveStatus.textContent = '☁️ Saving...';
-                saveStatus.style.background = '#FF9800';
+                saveStatus.textContent = '🔑 Logging in...';
+                saveStatus.style.background = '#2196F3';
                 
                 // Create unique ID from username + passphrase
                 const uniqueId = await simpleHash(username + passphrase + 'novena');
                 
+                // Try to find existing account
+                // First check if we have a saved bin ID for this user
+                const testResponse = await fetch('https://api.jsonbin.io/v3/b', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Bin-Name': 'test-' + uniqueId
+                    },
+                    body: JSON.stringify({test: true})
+                });
+
+                // If we can create a test bin, it means the account doesn't exist
+                if (testResponse.ok) {
+                    // Delete the test bin we just created
+                    const testResult = await testResponse.json();
+                    await fetch(`https://api.jsonbin.io/v3/b/${testResult.metadata.id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    saveStatus.textContent = '❌ Not Found';
+                    saveStatus.style.background = '#f44336';
+                    setTimeout(() => {
+                        saveStatus.textContent = '✓ Auto-Saved';
+                        saveStatus.style.background = '#4CAF50';
+                    }, 3000);
+                    alert('Account not found. Please check your username and passphrase, or create a new account.');
+                    return;
+                }
+                
+                // If we reach here, account likely exists, so try to load data
+                await loadFromCloud();
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                const saveStatus = document.getElementById('saveStatus');
+                saveStatus.textContent = '❌ Login Failed';
+                saveStatus.style.background = '#f44336';
+                setTimeout(() => {
+                    saveStatus.textContent = '✓ Auto-Saved';
+                    saveStatus.style.background = '#4CAF50';
+                }, 3000);
+                alert('Login failed. Please check your credentials and try again.');
+            }
+        }
+
+        function logoutFromCloud() {
+            isLoggedInToCloud = false;
+            currentCloudUser = null;
+            currentBinId = null;
+            
+            // Clear saved credentials
+            localStorage.removeItem('cloudBinId');
+            localStorage.removeItem('cloudUser');
+            localStorage.removeItem('cloudSyncId');
+            
+            hideCloudActions();
+            document.getElementById('syncUsername').value = '';
+            document.getElementById('syncPassphrase').value = '';
+            document.getElementById('accountInfo').textContent = '';
+            
+            const saveStatus = document.getElementById('saveStatus');
+            saveStatus.textContent = '🚪 Logged out';
+            saveStatus.style.background = '#757575';
+            setTimeout(() => {
+                saveStatus.textContent = '✓ Auto-Saved';
+                saveStatus.style.background = '#4CAF50';
+            }, 2000);
+        }
+
+        async function saveToCloud() {
+            if (!isLoggedInToCloud || !currentBinId) {
+                alert('Please login first');
+                return;
+            }
+            
+            try {
+                const saveStatus = document.getElementById('saveStatus');
+                saveStatus.textContent = '☁️ Saving...';
+                saveStatus.style.background = '#FF9800';
+                
                 const progressData = {
+                    accountType: 'novena-account',
+                    username: currentCloudUser,
                     currentDay: currentDay,
                     completedDays: [...completedDays],
                     viewMode: viewMode,
@@ -1170,21 +1388,15 @@ Mary, Undoer of Knots, pray for me.`,
                     novenaType: '54-Day Rosary Novena - Our Lady Undoer of Knots'
                 };
                 
-                // Use JSONBin.io free service
-                const response = await fetch('https://api.jsonbin.io/v3/b', {
-                    method: 'POST',
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${currentBinId}`, {
+                    method: 'PUT',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'X-Bin-Name': 'novena-' + uniqueId
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(progressData)
                 });
                 
                 if (response.ok) {
-                    const result = await response.json();
-                    localStorage.setItem('cloudBinId', result.metadata.id);
-                    localStorage.setItem('cloudSyncId', uniqueId);
-                    
                     saveStatus.textContent = '☁️ Saved!';
                     saveStatus.style.background = '#4CAF50';
                     setTimeout(() => {
@@ -1219,40 +1431,46 @@ Mary, Undoer of Knots, pray for me.`,
             try {
                 const saveStatus = document.getElementById('saveStatus');
                 saveStatus.textContent = '☁️ Loading...';
-                saveStatus.style.background = '#2196F3';
+                saveStatus.style.background = '#9C27B0';
                 
                 // Create unique ID from username + passphrase
                 const uniqueId = await simpleHash(username + passphrase + 'novena');
                 
-                // Try to get the bin ID from localStorage first
-                let binId = localStorage.getItem('cloudBinId');
+                // Try to load from known bin ID or search
+                let binId = currentBinId || localStorage.getItem('cloudBinId');
                 let response;
                 
                 if (binId) {
-                    // Try to load from known bin ID
                     response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`);
                 }
                 
                 if (!response || !response.ok) {
-                    // Fallback: search for bins (this might not work with free tier)
                     saveStatus.textContent = '❌ Not Found';
                     saveStatus.style.background = '#f44336';
                     setTimeout(() => {
                         saveStatus.textContent = '✓ Auto-Saved';
                         saveStatus.style.background = '#4CAF50';
                     }, 3000);
-                    alert('No saved progress found for this username/passphrase combination. Make sure you have saved your progress first.');
+                    alert('No saved progress found. Please check your credentials or create an account first.');
                     return;
                 }
                 
                 const result = await response.json();
                 const progressData = result.record;
                 
-                if (progressData && progressData.novenaType) {
+                if (progressData && progressData.novenaType && progressData.username === username) {
                     currentDay = progressData.currentDay;
                     completedDays = new Set(progressData.completedDays || []);
                     viewMode = progressData.viewMode || 'groups';
                     startDate = progressData.startDate || null;
+                    currentCloudUser = username;
+                    currentBinId = binId;
+                    isLoggedInToCloud = true;
+                    
+                    // Save credentials locally
+                    localStorage.setItem('cloudBinId', binId);
+                    localStorage.setItem('cloudUser', username);
+                    localStorage.setItem('cloudSyncId', uniqueId);
                     
                     // Save to localStorage
                     localStorage.setItem('novenaProgress', currentDay);
@@ -1269,6 +1487,9 @@ Mary, Undoer of Knots, pray for me.`,
                         switchToAllDaysView();
                     }
                     showDay(currentDay);
+                    showCloudActions();
+                    
+                    document.getElementById('accountInfo').textContent = `✓ Logged in as: ${username}`;
                     
                     saveStatus.textContent = '☁️ Loaded!';
                     saveStatus.style.background = '#4CAF50';
@@ -1277,7 +1498,7 @@ Mary, Undoer of Knots, pray for me.`,
                         saveStatus.style.background = '#4CAF50';
                     }, 2000);
                 } else {
-                    throw new Error('Invalid data format');
+                    throw new Error('Invalid data or username mismatch');
                 }
             } catch (error) {
                 console.error('Cloud load error:', error);
@@ -1356,6 +1577,8 @@ Mary, Undoer of Knots, pray for me.`,
             const savedCompleted = localStorage.getItem('completedDays');
             const savedViewMode = localStorage.getItem('viewMode') || 'groups';
             const savedStartDate = localStorage.getItem('novenaStartDate');
+            const savedCloudUser = localStorage.getItem('cloudUser');
+            const savedBinId = localStorage.getItem('cloudBinId');
             
             if (savedProgress) {
                 currentDay = parseInt(savedProgress);
@@ -1367,6 +1590,12 @@ Mary, Undoer of Knots, pray for me.`,
             
             if (savedStartDate) {
                 startDate = savedStartDate;
+            }
+            
+            if (savedCloudUser && savedBinId) {
+                currentCloudUser = savedCloudUser;
+                currentBinId = savedBinId;
+                isLoggedInToCloud = true;
             }
             
             viewMode = savedViewMode;
